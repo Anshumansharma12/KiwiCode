@@ -45,6 +45,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.graphics.drawable.DrawableWrapperCompat;
 import androidx.core.widget.ImageViewCompat;
 
+import android.animation.ValueAnimator;
 import org.chromium.base.ApiCompatibilityUtils;
 import org.chromium.base.MathUtils;
 import org.chromium.base.TraceEvent;
@@ -66,6 +67,7 @@ import org.chromium.chrome.browser.theme.ThemeUtils;
 import org.chromium.chrome.browser.toolbar.ButtonData;
 import org.chromium.chrome.browser.toolbar.ButtonData.ButtonSpec;
 import org.chromium.chrome.browser.toolbar.HomeButton;
+import org.chromium.chrome.browser.toolbar.top.HandButton;
 import org.chromium.chrome.browser.toolbar.KeyboardNavigationListener;
 import org.chromium.chrome.browser.toolbar.R;
 import org.chromium.chrome.browser.toolbar.TabCountProvider;
@@ -102,7 +104,7 @@ import java.util.List;
  */
 public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabCountObserver {
     /** The amount of time transitioning from one theme color to another should take in ms. */
-    public static final long THEME_COLOR_TRANSITION_DURATION = 250;
+    public static final long THEME_COLOR_TRANSITION_DURATION = 250; // In theory 417, since we have sped-up animation 0.6 in Kiwi, so we could adjust back to make it slower
 
     public static final int URL_FOCUS_CHANGE_ANIMATION_DURATION_MS = 225;
     private static final int URL_FOCUS_TOOLBAR_BUTTONS_DURATION_MS = 100;
@@ -300,6 +302,7 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
             super.onFinishInflate();
             mToolbarButtonsContainer = (ViewGroup) findViewById(R.id.toolbar_buttons);
             mHomeButton = findViewById(R.id.home_button);
+            mHandButton = findViewById(R.id.hand_button);
             mUrlBar = (TextView) findViewById(R.id.url_bar);
             mUrlActionContainer = findViewById(R.id.url_action_container);
             mToolbarBackground =
@@ -469,6 +472,10 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
         enableTabSwitchingResources();
         mHomeButton.setOnClickListener(this);
 
+        if (mHandButton != null) {
+            mHandButton.setOnClickListener(this);
+        }
+
         getMenuButtonCoordinator().setOnKeyListener(new KeyboardNavigationListener() {
             @Override
             public View getNextFocusForward() {
@@ -524,6 +531,34 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
         return super.onTouchEvent(ev);
     }
 
+    public void openOverscroll() {
+        Tab currentTab = getToolbarDataProvider().getTab();
+        if (currentTab == null) return;
+
+        String SCRIPT = "var _kbOverscroll;"
++"(function (d) {"
++   " if (typeof _kbOverscroll == 'undefined' || _kbOverscroll == false) {"
++        "d.getElementsByTagName('html')[0].style.transition = '0.5s ease-in-out';"
++        "d.getElementsByTagName('html')[0].style.transform = 'translate(0px, 98vw)';"
++        "d.getElementsByTagName('html')[0].style.overflowY = 'initial';"
++        "d.getElementsByTagName('body')[0].style.display='block';"
++        "d.getElementsByTagName('body')[0].style.position='fixed';"
++        "d.getElementsByTagName('body')[0].style.overflowY='scroll';"
++        "d.getElementsByTagName('body')[0].style.height='98vw';"
++        "window.scrollTo({top: 0,left: 0,behavior: 'smooth' });"
++        "_kbOverscroll = true;"
++    "} else {"
++        "d.getElementsByTagName('html')[0].style.transition = '0.5s ease-in-out';"
++        "d.getElementsByTagName('html')[0].style.transform = '';"
++        "d.getElementsByTagName('html')[0].style.overflowY = 'initial';"
++        "d.getElementsByTagName('body')[0].style.display='';"
++        "d.getElementsByTagName('body')[0].style.position='initial';"
++        "d.getElementsByTagName('body')[0].style.overflowY='auto';"
++        "d.getElementsByTagName('body')[0].style.height='';"
++        "_kbOverscroll = false;}}(document));";
+        currentTab.getWebContents().evaluateJavaScript(SCRIPT, null);
+    }
+
     @Override
     public void onClick(View v) {
         // Don't allow clicks while the omnibox is being focused.
@@ -537,6 +572,10 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
                 TrackerFactory.getTrackerForProfile(profile).notifyEvent(
                         EventConstants.PARTNER_HOME_PAGE_BUTTON_PRESSED);
             }
+        }
+
+        if (mHandButton != null && mHandButton == v) {
+            openOverscroll();
         }
     }
 
@@ -802,6 +841,12 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
+        try {
+            ValueAnimator.class.getMethod("setDurationScale", float.class).invoke(null, 0.0f);
+        } catch (Throwable t) {
+
+        }
+
         if (!mTextureCaptureMode && mToolbarBackground.getColor() != Color.TRANSPARENT) {
             // Update to compensate for orientation changes.
             mToolbarBackground.setBounds(0, 0, getWidth(), getHeight());
@@ -818,6 +863,11 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
             draWithoutBackground(canvas);
         } else {
             super.dispatchDraw(canvas);
+        }
+        try {
+            ValueAnimator.class.getMethod("setDurationScale", float.class).invoke(null, 0.60f);
+        } catch (Throwable t) {
+
         }
     }
 
@@ -963,6 +1013,9 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
         mToolbarButtonsContainer.setVisibility(toolbarButtonVisibility);
         if (mHomeButton.getVisibility() != GONE) {
             mHomeButton.setVisibility(toolbarButtonVisibility);
+        }
+        if (mHandButton != null && mHandButton.getVisibility() != GONE) {
+            mHandButton.setVisibility(toolbarButtonVisibility);
         }
 
         updateLocationBarLayoutForExpansionAnimation();
@@ -1279,6 +1332,32 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
             ViewUtils.translateCanvasToView(
                     mToolbarButtonsContainer, mOptionalButton.getViewForDrawing(), canvas);
             mOptionalButton.getViewForDrawing().draw(canvas);
+            canvas.restore();
+        }
+
+        if (mHandButton != null && mHandButton.getVisibility() != View.GONE) {
+            canvas.save();
+            Drawable oversButton = mHandButton.getDrawable();
+
+            ViewUtils.translateCanvasToView(mToolbarButtonsContainer, mHandButton, canvas);
+
+            int backgroundWidth = mHandButton.getDrawable().getIntrinsicWidth();
+            int backgroundHeight = mHandButton.getDrawable().getIntrinsicHeight();
+            int backgroundLeft =
+                    (mHandButton.getWidth() - mHandButton.getPaddingLeft()
+                            - mHandButton.getPaddingRight() - backgroundWidth)
+                    / 2;
+            backgroundLeft += mHandButton.getPaddingLeft();
+            int backgroundTop =
+                    (mHandButton.getHeight() - mHandButton.getPaddingTop()
+                            - mHandButton.getPaddingBottom() - backgroundHeight)
+                    / 2;
+            backgroundTop += mHandButton.getPaddingTop();
+            canvas.translate(backgroundLeft, backgroundTop);
+
+            oversButton.setAlpha(rgbAlpha);
+            oversButton.draw(canvas);
+
             canvas.restore();
         }
 
@@ -1631,6 +1710,10 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
                 mOptionalButton.setPaddingStart(0);
             }
         }
+        if (mHandButton != null) {
+          if (!ContextUtils.getAppSharedPreferences().getBoolean("enable_bottom_toolbar", false) || !ContextUtils.getAppSharedPreferences().getBoolean("enable_overscroll_button", true))
+            mHandButton.setVisibility(GONE);
+        }
     }
 
     @Override
@@ -1779,7 +1862,7 @@ public class ToolbarPhone extends ToolbarLayout implements OnClickListener, TabC
 
         updateButtonsTranslationY();
 
-        if (DeviceClassManager.enableAccessibilityLayout(getContext()) || !animate) {
+        if (DeviceClassManager.enableAccessibilityLayout(getContext()) || !animate || showToolbar) {
             finishAnimations();
         }
 

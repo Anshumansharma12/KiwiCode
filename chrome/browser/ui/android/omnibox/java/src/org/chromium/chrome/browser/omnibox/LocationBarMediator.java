@@ -281,7 +281,7 @@ class LocationBarMediator
         if (hasFocus) {
             if (mNativeInitialized) RecordUserAction.record("FocusLocation");
             UrlBarData urlBarData = mLocationBarDataProvider.getUrlBarData();
-            if (urlBarData.editingText != null) {
+            if (urlBarData != null && urlBarData.editingText != null) {
                 setUrlBarText(urlBarData, UrlBar.ScrollType.NO_SCROLL, SelectionState.SELECT_ALL);
             }
         } else {
@@ -1325,6 +1325,12 @@ class LocationBarMediator
 
     @Override
     public void loadUrlFromVoice(String url) {
+        if (url.startsWith("kiwi://")) {
+          url = UrlBarData.replaceOnce(url, "kiwi://", "chrome://");
+        }
+        if (url.startsWith("kiwi-extension://")) {
+          url = UrlBarData.replaceOnce(url, "kiwi-extension://", "chrome-extension://");
+        }
         loadUrl(url, PageTransition.TYPED, 0);
     }
 
