@@ -2147,6 +2147,12 @@ void StyleEngine::ApplyUserRuleSetChanges(
       MarkFontsNeedUpdate();
     }
 
+    if (changed_rule_flags & kFontPaletteValuesRules) {
+      font_palette_values_rule_map_.clear();
+      AddFontPaletteValuesRulesFromSheets(new_style_sheets);
+      MarkFontsNeedUpdate();
+    }
+
     // We just cleared all the rules, which includes any author rules. They
     // must be forcibly re-added.
     if (ScopedStyleResolver* scoped_resolver =
@@ -2438,6 +2444,14 @@ void StyleEngine::AddPropertyRulesFromSheets(
   for (const ActiveStyleSheet& active_sheet : sheets) {
     if (RuleSet* rule_set = active_sheet.second)
       AddPropertyRules(cascade_map, *rule_set, is_user_style);
+  }
+}
+
+void StyleEngine::AddFontPaletteValuesRulesFromSheets(
+    const ActiveStyleSheetVector& sheets) {
+  for (const ActiveStyleSheet& active_sheet : sheets) {
+    if (RuleSet* rule_set = active_sheet.second)
+      AddFontPaletteValuesRules(*rule_set);
   }
 }
 

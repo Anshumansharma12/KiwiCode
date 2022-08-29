@@ -315,6 +315,7 @@ void ExtensionActionViewController::TriggerPopupForAPI(
 void ExtensionActionViewController::UpdateState() {
   if (!ExtensionIsValid())
     return;
+  }
 
   view_delegate_->UpdateState();
 }

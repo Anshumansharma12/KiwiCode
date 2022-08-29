@@ -87,6 +87,9 @@ StyleResolverState::StyleResolverState(
     layout_parent_style_ = parent_style_;
 
   DCHECK(document.IsActive());
+
+  if (UsesHighlightPseudoInheritance())
+    DCHECK(originating_element_style_);
 }
 
 StyleResolverState::~StyleResolverState() {

@@ -1097,6 +1097,7 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
         mLocaleManager.stopObservingPhoneChanges();
 
         NavigationPredictorBridge.onPause();
+        StartSurfaceUserData.getInstance().setUnusedTabRestoredAtStartup(false);
 
         super.onPauseWithNative();
     }
@@ -2872,6 +2873,37 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
             super.performOnConfigurationChanged(newConfig);
         }
     }
+    private void returnToOverviewModeOnBackPressed() {
+        Tab currentTab = getActivityTab();
+        assert currentTab != null;
+
+        // If current tab is an incognito one, we need to change tab model to non-incognito for
+        // showing non-incognito start surface homepage.
+        if (currentTab.isIncognito()) mTabModelSelector.selectModel(/*incognito=*/false);
+
+        if (StartSurfaceUserData.getKeepTab(currentTab)
+                || StartSurfaceUserData.isOpenedFromStart(currentTab)) {
+            // If the current tab is created from the start surface with the keepTab property,
+            // shows the Start surface non-incognito homepage to prevent a loop between the
+            // current tab and previous overview mode. Once in the Start surface, it will close
+            // Chrome if back button is tapped again.
+            showOverview(StartSurfaceState.SHOWING_HOMEPAGE);
+            ReturnToChromeUtil.recordBackNavigationToStart("FromTab");
+        } else {
+            // Otherwise, clicking the back button should go back to the previous overview mode.
+            showOverview(StartSurfaceState.SHOWING_PREVIOUS);
+        }
+
+        if (currentTab.isClosing()) return;
+        // If current tab is incognito, or it shouldn't be kept and it's not from restore, close
+        // the tab.
+        if (currentTab.isIncognito()
+                || (!StartSurfaceUserData.getKeepTab(currentTab)
+                        && currentTab.getLaunchType() != TabLaunchType.FROM_RESTORE)) {
+            closeTabAfterStartSurfaceLayoutIsShown(currentTab);
+        }
+    }
+
     private void returnToOverviewModeOnBackPressed() {
         Tab currentTab = getActivityTab();
         assert currentTab != null;

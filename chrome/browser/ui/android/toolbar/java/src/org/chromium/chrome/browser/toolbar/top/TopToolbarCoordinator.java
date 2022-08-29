@@ -27,6 +27,7 @@ import org.chromium.chrome.browser.layouts.LayoutManager;
 import org.chromium.chrome.browser.layouts.LayoutStateProvider;
 import org.chromium.chrome.browser.layouts.LayoutType;
 import org.chromium.chrome.browser.omnibox.LocationBar;
+import org.chromium.chrome.browser.profiles.Profile;
 import org.chromium.chrome.browser.tab.Tab;
 import org.chromium.chrome.browser.tabmodel.IncognitoStateProvider;
 import org.chromium.chrome.browser.tabmodel.TabModelSelector;
@@ -589,6 +590,9 @@ public class TopToolbarCoordinator implements Toolbar {
      */
     public void onDefaultSearchEngineChanged() {
         mToolbarLayout.onDefaultSearchEngineChanged();
+        if (mStartSurfaceToolbarCoordinator != null) {
+            mStartSurfaceToolbarCoordinator.onDefaultSearchEngineChanged();
+        }
     }
 
     @Override

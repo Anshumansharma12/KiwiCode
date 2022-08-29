@@ -48,6 +48,7 @@
 #include "cc/tiles/frame_viewer_instrumentation.h"
 #include "cc/trees/layer_tree_host.h"
 #include "components/paint_preview/common/paint_preview_tracker.h"
+#include "third_party/abseil-cpp/absl/functional/function_ref.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/frame/frame.mojom-blink.h"
 #include "third_party/blink/public/mojom/frame/remote_frame.mojom-blink.h"
@@ -315,6 +316,7 @@ LocalFrameView::~LocalFrameView() {
 void LocalFrameView::Trace(Visitor* visitor) const {
   visitor->Trace(part_update_set_);
   visitor->Trace(frame_);
+  visitor->Trace(deferred_to_be_locked_);
   visitor->Trace(update_plugins_timer_);
   visitor->Trace(layout_subtree_root_list_);
   visitor->Trace(orthogonal_writing_mode_root_list_);
@@ -1929,6 +1931,34 @@ void LocalFrameView::DidAttachDocument() {
     // Allow for commits to be deferred because this is a new document.
     have_deferred_main_frame_commits_ = false;
   }
+}
+
+void LocalFrameView::InitializeRootScroller() {
+  Page* page = frame_->GetPage();
+  DCHECK(page);
+
+  DCHECK_EQ(frame_, page->MainFrame());
+  DCHECK(frame_->GetDocument());
+  DCHECK(frame_->GetDocument()->IsActive());
+
+  VisualViewport& visual_viewport = frame_->GetPage()->GetVisualViewport();
+  DCHECK(visual_viewport.IsActiveViewport());
+
+  ScrollableArea* layout_viewport = LayoutViewport();
+  DCHECK(layout_viewport);
+
+  // This method may be called multiple times during loading. If the root
+  // scroller is already initialized this call will be a no-op.
+  if (viewport_scrollable_area_)
+    return;
+
+  auto* root_frame_viewport = MakeGarbageCollected<RootFrameViewport>(
+      visual_viewport, *layout_viewport);
+  viewport_scrollable_area_ = root_frame_viewport;
+
+  DCHECK(frame_->GetDocument());
+  page->GlobalRootScrollerController().InitializeViewportScrollCallback(
+      *root_frame_viewport, *frame_->GetDocument());
 }
 
 void LocalFrameView::InitializeRootScroller() {
