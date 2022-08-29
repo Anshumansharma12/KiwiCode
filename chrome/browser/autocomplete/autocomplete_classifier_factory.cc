@@ -50,6 +50,7 @@ AutocompleteClassifierFactory::AutocompleteClassifierFactory()
           "AutocompleteClassifier",
           ProfileSelections::BuildRedirectedInIncognito()) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
+if (extensions::ExtensionsBrowserClient::Get())
   DependsOn(
       extensions::ExtensionsBrowserClient::Get()->GetExtensionSystemFactory());
 #endif

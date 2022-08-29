@@ -64,7 +64,7 @@
 #include "ui/gfx/geometry/size_f.h"
 #include "url/gurl.h"
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || true
 #include "chrome/renderer/accessibility/read_anything_app_controller.h"
 #include "chrome/renderer/searchbox/searchbox_extension.h"
 #include "ui/accessibility/accessibility_features.h"
@@ -302,7 +302,7 @@ void ChromeRenderFrameObserver::DidCommitProvisionalLoad(
   static crash_reporter::CrashKeyString<8> view_count_key("view-count");
   view_count_key.Set(base::NumberToString(blink::WebView::GetWebViewCount()));
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || true
   if (render_frame()->GetEnabledBindings() &
       content::kWebUIBindingsPolicyMask) {
     for (const auto& script : webui_javascript_)
@@ -313,7 +313,7 @@ void ChromeRenderFrameObserver::DidCommitProvisionalLoad(
 }
 
 void ChromeRenderFrameObserver::DidClearWindowObject() {
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || true
   const base::CommandLine& command_line =
       *base::CommandLine::ForCurrentProcess();
   if (command_line.HasSwitch(switches::kInstantProcess))
@@ -375,7 +375,7 @@ void ChromeRenderFrameObserver::SetWindowFeatures(
 
 void ChromeRenderFrameObserver::ExecuteWebUIJavaScript(
     const std::u16string& javascript) {
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || true
   webui_javascript_.push_back(javascript);
 #endif
 }

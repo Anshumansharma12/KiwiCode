@@ -4161,8 +4161,6 @@ const char kCormorantDescription[] = "Enables the experimental Cormorant UI.";
 
 // Non-Android -----------------------------------------------------------------
 
-#else  // BUILDFLAG(IS_ANDROID)
-
 const char kAppManagementAppDetailsName[] =
     "Enable App Details in App Management.";
 const char kAppManagementAppDetailsDescription[] =

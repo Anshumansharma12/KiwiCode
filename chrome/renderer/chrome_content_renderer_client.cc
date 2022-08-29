@@ -248,6 +248,9 @@
 #include "chrome/renderer/supervised_user/supervised_user_error_page_controller_delegate_impl.h"
 #endif
 
+#include "chrome/renderer/searchbox/searchbox.h"
+#include "chrome/renderer/searchbox/searchbox_extension.h"
+
 using autofill::AutofillAgent;
 using autofill::PasswordAutofillAgent;
 using autofill::PasswordGenerationAgent;
@@ -709,7 +712,7 @@ void ChromeContentRendererClient::RenderFrameCreated(
         render_frame, ISOLATED_WORLD_ID_TRANSLATE, associated_interfaces);
   }
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || true
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   if (command_line->HasSwitch(switches::kInstantProcess) &&
       render_frame->IsMainFrame()) {
@@ -717,6 +720,8 @@ void ChromeContentRendererClient::RenderFrameCreated(
   }
 #endif
 
+
+#if 0
 // We should create CommerceHintAgent only for a main frame except a fenced
 // frame that is the main frame as well, so we should check if |render_frame|
 // is the fenced frame.
@@ -728,6 +733,7 @@ void ChromeContentRendererClient::RenderFrameCreated(
       render_frame->IsMainFrame() && !render_frame->IsInFencedFrameTree()) {
     new cart::CommerceHintAgent(render_frame);
   }
+#endif  // !BUILDFLAG(IS_ANDROID)
 
 #if BUILDFLAG(ENABLE_SPELLCHECK)
   new SpellCheckProvider(render_frame, spellcheck_.get(), this);
@@ -1383,7 +1389,7 @@ void ChromeContentRendererClient::WillSendRequest(
   if (!url.ProtocolIs(chrome::kChromeSearchScheme))
     return;
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || true
   SearchBox* search_box =
       SearchBox::Get(content::RenderFrame::FromWebFrame(frame->LocalRoot()));
   if (search_box) {

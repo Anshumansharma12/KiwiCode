@@ -2372,8 +2372,6 @@ extern const char kCormorantDescription[];
 
 // Non-Android ----------------------------------------------------------------
 
-#else  // !BUILDFLAG(IS_ANDROID)
-
 extern const char kAppManagementAppDetailsName[];
 extern const char kAppManagementAppDetailsDescription[];
 

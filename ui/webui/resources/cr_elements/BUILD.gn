@@ -160,7 +160,7 @@ html_to_wrapper("html_wrapper_files_native") {
   template = "native"
 }
 
-if (include_polymer) {
+if (include_polymer || true) {
   html_to_wrapper("html_wrapper_files") {
     deps = [ ":preprocess_ts" ]
     in_folder = preprocess_folder

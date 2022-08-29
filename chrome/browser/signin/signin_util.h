@@ -102,7 +102,7 @@ void SetUserSignoutAllowedForProfile(Profile* profile, bool is_allowed);
 // ensure that the signout allowed flag is updated.
 void EnsureUserSignoutAllowedIsInitializedForProfile(Profile* profile);
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || true
 #if !BUILDFLAG(IS_CHROMEOS)
 // Returns the state of profile separation on any account that would signin
 // inside `profile`. Returns an empty set if profile separation is not enforced
